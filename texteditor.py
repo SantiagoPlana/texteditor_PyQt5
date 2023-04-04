@@ -102,8 +102,43 @@ class MainWindow(qtw.QMainWindow):
         replace_widget.layout().addWidget(search_and_replace_btn)
         replace_widget.layout().addStretch()
 
+        # About message
+        help_menu.addAction('About', self.showAboutDialog)
 
+        # Beta warning
+        response = qtw.QMessageBox.question(
+            self,
+            'My Text Editor',
+            'This is beta software, do you want to continue?',
+            qtw.QMessageBox.Yes | qtw.QMessageBox.Abort
+        )
+        if response == qtw.QMessageBox.Abort:
+            self.close()
+            sys.exit()
 
+        # custom QMessageBox
+        splash_screen = qtw.QMessageBox()
+        splash_screen.setWindowTitle('My Text Editor')
+        splash_screen.setText('BETA SOFTWARE WARNING!!!')
+        splash_screen.setInformativeText(
+            'This is very, very beta, '
+            'Are you really really sure you want to use it?'
+        )
+        splash_screen.setDetailedText(
+            'This editor was written to try functionality'
+            'and learn PyQt5, and is probably trash.'
+        )
+        splash_screen.setWindowModality(qtc.Qt.WindowModal)
+        splash_screen.addButton(qtw.QMessageBox.Yes)
+        splash_screen.addButton(qtw.QMessageBox.Abort)
+        response = splash_screen.exec()
+        if response == qtw.QMessageBox.Abort:
+            self.close()
+            sys.exit()
+
+        # file opener
+        open_action.triggered.connect(self.openFile)
+        save_action.triggered.connect(self.saveFile)
         # End main UI code
         self.show()
 
@@ -115,6 +150,45 @@ class MainWindow(qtw.QMainWindow):
             self.textedit.setText(
                 self.textedit.toPlainText().replace(s_text, r_text)
             )
+
+    def showAboutDialog(self):
+        qtw.QMessageBox.about(
+            self,
+            "About texteditor.py",
+            "This is a text editor written in PyQt5."
+        )
+
+    def openFile(self):
+        filename, _ = qtw.QFileDialog.getOpenFileName(
+            self,
+            "Select a text file to open",  # Caption used in window title
+            qtc.QDir.homePath(),  # Starting directory as a path string
+            'Text Files (*.txt) ;;Python Files (*.py) ;; All Files (*)',  # Filters for file dropdown
+            'Python Files (*.py)',   # Default selected filter
+            qtw.QFileDialog.DontUseNativeDialog |
+            qtw.QFileDialog.DontResolveSymlinks    # Option flags
+        )
+        if filename:
+            try:
+                with open(filename, 'r') as fh:
+                    self.textedit.setText(fh.read())
+            except Exception as e:
+                qtw.QMessageBox.critical(f"could not load file: {e}")
+
+
+    def saveFile(self):
+        filename, _ = qtw.QFileDialog.getSaveFileName(
+            self,
+            "Select the file to save to...",
+            qtc.QDir.homePath(),
+            'Text Files (*.txt) ;;Python Files (*.py) ;; All Files (*)'
+        )
+        if filename:
+            try:
+                with open(filename, 'w') as fh:
+                    fh.write(self.textedit.toPlainText())
+            except Exception as e:
+                qtw.QMessageBox.critical(f'Could not save file: {e}')
 
 if __name__ == '__main__':
     app = qtw.QApplication(sys.argv)
