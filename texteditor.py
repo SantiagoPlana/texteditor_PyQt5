@@ -3,7 +3,38 @@ from PyQt5 import QtWidgets as qtw
 from PyQt5 import QtGui as qtg
 from PyQt5 import QtCore as qtc
 
+
+class SettingsDialog(qtw.QDialog):
+    """Dialog for setting the settings"""
+
+    def __init__(self, settings, parent=None):
+        super().__init__(parent, modal=True)
+        self.setLayout(qtw.QFormLayout())
+        self.settings = settings
+        self.layout().addRow(
+            qtw.Qlabel('<h1>Application Settings</h1>'),
+        )
+        self.show_warnings_cb = qtw.QCheckBox(
+            checked=settings.get('show_warnings')
+        )
+        self.layout().addRow('Show Warnings', self.show_warnings_cb)
+
+        self.accept_btn = qtw.QPushButton('Ok', clicked=self.accept)
+        self.cancel_btn = qtw.QPushButton('Cancel', clicked=self.reject)
+        self.layout().addRow(self.accept_btn, self.cancel_btn)
+
+    def accept(self):
+        self.settings['show_warnings'] = self.show_warnings_cb.isChecked()
+        super().accept()
+
+
 class MainWindow(qtw.QMainWindow):
+
+    settings = {'show_warnings': True}
+
+    def show_settings(self):
+        settings_dialog = SettingsDialog(self.settings, self)
+        settings_dialog.exec()
 
     def __init__(self):
         """MainWindow constructor"""
@@ -189,6 +220,20 @@ class MainWindow(qtw.QMainWindow):
                     fh.write(self.textedit.toPlainText())
             except Exception as e:
                 qtw.QMessageBox.critical(f'Could not save file: {e}')
+
+
+    def set_font(self):
+        current = self.textedit.currentFont()
+        font, accepted = qtw.QFontDialog.getFont(
+            current,
+            self,
+            options=(
+                qtw.QFontDialog.DontUseNativeDialog |
+                qtw.QFontDialog.MonospacedFonts
+            ))  # getFont returns tuple (selected, UInput)
+        if accepted:
+            self.textedit.setCurrentFont(font)
+
 
 if __name__ == '__main__':
     app = qtw.QApplication(sys.argv)
